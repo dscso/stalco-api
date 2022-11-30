@@ -4,14 +4,14 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	
+
 	"rest-go/controllers"
 )
 
 // StartGin function
 func StartGin() {
 	router := gin.Default()
-	api := router.Group("/")
+	api := router.Group("/api")
 	{
 		//api.GET("/area", user.GetAllUser)
 		//api.POST("/users", user.CreateUser)
