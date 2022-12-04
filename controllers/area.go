@@ -6,10 +6,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	
+	"go.mongodb.org/mongo-driver/mongo"
+
 	"rest-go/db"
+	"rest-go/middleware"
 	"rest-go/models"
-	"rest-go/util"
 )
 
 func GetArea(c *gin.Context) {
@@ -17,7 +18,7 @@ func GetArea(c *gin.Context) {
 
 	id, err := primitive.ObjectIDFromHex(idString)
 	if err != nil {
-		util.HandleConvertIDError(c)
+		middleware.AppError(c, err, http.StatusNotFound, "Invalid ID")
 		return
 	}
 
@@ -26,7 +27,11 @@ func GetArea(c *gin.Context) {
 	err = db.AreasCollection.FindOne(c, bson.M{"_id": id}).Decode(&ar)
 
 	if err != nil {
-		util.HandleMongoDecodeError(err, c)
+		if err == mongo.ErrNoDocuments {
+			middleware.AppError(c, err, http.StatusNotFound, "Area not found")
+		} else {
+			middleware.AppErrorFatal(c, err, http.StatusInternalServerError, "Internal server error")
+		}
 		return
 	}
 

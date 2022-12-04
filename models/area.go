@@ -6,6 +6,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+// todo logic for zone sensor relationship
 type Zone struct {
 	ID       primitive.ObjectID `json:"id" bson:"_id"`
 	Name     string             `json:"name" bson:"name"`
@@ -28,6 +29,6 @@ type Area struct {
 	Name           string               `json:"name" bson:"name"`
 	CreatedAt      time.Time            `json:"created_at" bson:"created_at"`
 	UpdatedAt      time.Time            `json:"updated_at" bson:"updated_at"`
-	Administrators []primitive.ObjectID `json:"administrators" bson:"administrators"`
+	Administrators []primitive.ObjectID `json:"-" bson:"administrators"`
 	Floors         []Floor              `json:"floors" bson:"floors"`
 }
