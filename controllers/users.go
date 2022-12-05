@@ -4,10 +4,12 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/dscso/sessions"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/crypto/bcrypt"
+
 	"rest-go/db"
 	"rest-go/middleware"
 	"rest-go/models"
@@ -22,7 +24,7 @@ func CreateUser(c *gin.Context) {
 		return
 	}
 	// hashing password
-	bytes, err := bcrypt.GenerateFromPassword([]byte(user.Password), 14)
+	bytes, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
 		middleware.AppErrorFatal(c, err, http.StatusInternalServerError, "Internal server error")
 		return
@@ -40,7 +42,7 @@ func CreateUser(c *gin.Context) {
 		return
 	}
 	// returning user
-	c.JSON(http.StatusCreated, gin.H{"status": "success", "data": user})
+	c.JSON(http.StatusCreated, gin.H{"status": "success", "data": gin.H{}})
 }
 
 // jwt authentication with token generation
@@ -69,21 +71,15 @@ func LoginUser(c *gin.Context) {
 		middleware.AppError(c, err, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
-	// generating jwt token
-	token, err := middleware.GenerateJWT(userFromDB)
+	// saving user in session
+	session := sessions.Default(c)
+	session.Set("userID", userFromDB.ID)
+	err = session.Save()
 	if err != nil {
-		middleware.AppErrorFatal(c, err, http.StatusInternalServerError, "Internal server error")
-		return
-	}
-	// validating jwt token
-	var uc models.UserClaim
-	err = middleware.ValidateToken(token, &uc)
-	if err != nil {
+		log.Println(err.Error())
 		middleware.AppError(c, err, http.StatusInternalServerError, "Internal server error")
-		log.Println("after login token was not valid! this should not happen...")
-		log.Println(err)
 		return
 	}
 	// returning token
-	c.JSON(http.StatusOK, gin.H{"status": "success", "data": gin.H{"token": token}})
+	c.JSON(http.StatusOK, gin.H{"status": "success", "data": gin.H{}})
 }

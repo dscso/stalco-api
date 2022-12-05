@@ -1,41 +1,19 @@
 package middleware
 
 import (
-	"fmt"
-	"github.com/golang-jwt/jwt/v4"
-	"math/rand"
-	"rest-go/models"
+	"net/http"
+
+	"github.com/dscso/sessions"
+	"github.com/gin-gonic/gin"
 )
 
-var secretKey = []byte("GoLinuxCasd,asndhjkashdahdkjahskdjahsdkjhasdjkahsdkjahsdkjashdjkashdkjashdakjsdhaksjhdloudKey")
-
-func GenerateJWT(user models.User) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, models.UserClaim{
-		RegisteredClaims: jwt.RegisteredClaims{},
-		ID:               rand.Int(),
-		Email:            user.Email,
-	})
-
-	signedString, err := token.SignedString([]byte(secretKey))
-
-	if err != nil {
-		return "", fmt.Errorf("error creating signed string: %v", err)
+func Authorized(c *gin.Context) {
+	session := sessions.Default(c)
+	user := session.Get("userID")
+	if user == nil {
+		AppError(c, nil, http.StatusUnauthorized, "please sign in")
+		return
 	}
 
-	return signedString, nil
-}
-
-func ValidateToken(tokenString string, userClaim *models.UserClaim) error {
-	println("tokenString: ", tokenString)
-	token, err := jwt.ParseWithClaims(tokenString, userClaim, func(token *jwt.Token) (interface{}, error) {
-		return []byte(secretKey), nil
-	})
-	if err != nil {
-		return err
-	}
-
-	if !token.Valid {
-		return fmt.Errorf("invalid token")
-	}
-	return nil
+	c.Next()
 }
