@@ -1,85 +1,94 @@
 package controllers
 
 import (
-	"log"
-	"net/http"
-
-	"github.com/dscso/sessions"
-	"github.com/gin-gonic/gin"
+	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/crypto/bcrypt"
+	"log"
+	"rest-go/middleware"
 
 	"rest-go/db"
-	"rest-go/middleware"
 	"rest-go/models"
 )
 
-func CreateUser(c *gin.Context) {
+type CreateUserResponse struct {
+	Status string      `json:"status"`
+	Data   models.User `json:"data"`
+}
+
+func CreateUser(c *fiber.Ctx) error {
 	// converting json to struct
 	var user models.User
-	err := c.BindJSON(&user)
-	if err != nil {
-		middleware.AppError(c, err, http.StatusBadRequest, "Bad Request")
-		return
+	if err := c.BodyParser(&user); err != nil {
+		return err
 	}
 	// hashing password
 	bytes, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
-		middleware.AppErrorFatal(c, err, http.StatusInternalServerError, "Internal server error")
-		return
+		return err
 	}
 	user.Password = string(bytes)
+	user.ID = primitive.NewObjectID()
 
 	// inserting user in database
-	_, err = db.UsersCollection.InsertOne(c, user)
+	_, err = db.UsersCollection.InsertOne(c.Context(), user)
 	if err != nil {
 		if mongo.IsDuplicateKeyError(err) {
-			middleware.AppError(c, err, http.StatusConflict, "User already exists")
+			println(err.Error())
+			return &fiber.Error{Message: "User already exists", Code: fiber.StatusConflict}
 		} else {
-			middleware.AppErrorFatal(c, err, http.StatusInternalServerError, "Internal server error")
+			return &fiber.Error{Message: "Internal server error", Code: fiber.StatusInternalServerError}
 		}
-		return
 	}
-	// returning user
-	c.JSON(http.StatusCreated, gin.H{"status": "success", "data": gin.H{}})
+
+	return c.JSON(CreateUserResponse{Status: "success", Data: user})
 }
 
-// jwt authentication with token generation
-func LoginUser(c *gin.Context) {
+type LoginUserResponse struct {
+	Status string                     `json:"status"`
+	Data   middleware.SessionDatabase `json:"data"`
+}
+
+func LoginUser(c *fiber.Ctx) error {
 	// converting json to struct
 	var user models.User
-	err := c.BindJSON(&user)
-	if err != nil {
-		middleware.AppError(c, err, http.StatusBadRequest, "Bad Request")
-		return
+	if err := c.BodyParser(&user); err != nil {
+		return err
 	}
 	// searching for user in database
 	var userFromDB models.User
-	err = db.UsersCollection.FindOne(c, bson.M{"email": user.Email}).Decode(&userFromDB)
+	err := db.UsersCollection.FindOne(c.Context(), bson.M{"email": user.Email}).Decode(&userFromDB)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			middleware.AppError(c, err, http.StatusNotFound, "User not found")
+			return &fiber.Error{Message: "User not found", Code: fiber.StatusNotFound}
 		} else {
-			middleware.AppErrorFatal(c, err, http.StatusInternalServerError, "Internal server error")
+			return &fiber.Error{Message: "Internal server error", Code: fiber.StatusInternalServerError}
 		}
-		return
 	}
 	// comparing passwords
-	err = bcrypt.CompareHashAndPassword([]byte(userFromDB.Password), []byte(user.Password))
-	if err != nil {
-		middleware.AppError(c, err, http.StatusUnauthorized, "Unauthorized")
-		return
+	if bcrypt.CompareHashAndPassword([]byte(userFromDB.Password), []byte(user.Password)) != nil {
+		return &fiber.Error{Message: "Incorrect password", Code: fiber.StatusUnauthorized}
 	}
 	// saving user in session
-	session := sessions.Default(c)
-	session.Set("userID", userFromDB.ID)
-	err = session.Save()
 	if err != nil {
 		log.Println(err.Error())
-		middleware.AppError(c, err, http.StatusInternalServerError, "Internal server error")
-		return
+		return &fiber.Error{Message: "Internal server error", Code: fiber.StatusInternalServerError}
 	}
-	// returning token
-	c.JSON(http.StatusOK, gin.H{"status": "success", "data": gin.H{}})
+	sessionDataset, err := middleware.NewSession(c, userFromDB)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(LoginUserResponse{Status: "success", Data: *sessionDataset})
+}
+
+func Protected(c *fiber.Ctx) error {
+	user := c.Locals("session").(*middleware.SessionAuthenticated)
+
+	if user.Authenticated {
+		return c.JSON(fiber.Map{"message": "Welcome " + user.UserID.Hex() + "!"})
+	}
+	return c.JSON(fiber.Map{"message": "Not authenticated!"})
 }

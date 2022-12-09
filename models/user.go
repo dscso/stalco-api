@@ -1,11 +1,14 @@
 package models
 
-import "github.com/golang-jwt/jwt/v4"
+import (
+	"github.com/golang-jwt/jwt/v4"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
 
 type User struct {
-	ID       string `json:"id" bson:"_id"`
-	Email    string `json:"email" bson:"email" required:"true"`
-	Password string `json:"password" required:"true"`
+	ID       primitive.ObjectID `json:"id" bson:"_id"`
+	Email    string             `json:"email" bson:"email" required:"true"`
+	Password string             `json:"password" required:"true"`
 }
 
 type UserClaim struct {
