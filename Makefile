@@ -18,5 +18,5 @@ swag:
 	$(GO_BIN_PATH)swag init -g routes/routes.go --output docs/
 
 install:
-	go get
+	mkdir -p docs
 	which $(GO_BIN_PATH)swag || go install github.com/swaggo/swag/cmd/swag@latest
