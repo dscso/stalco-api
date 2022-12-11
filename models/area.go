@@ -9,26 +9,26 @@ import (
 // todo logic for zone sensor relationship
 type Zone struct {
 	ID       primitive.ObjectID `json:"id" bson:"_id"`
-	Name     string             `json:"name" bson:"name"`
-	Type     string             `json:"type" bson:"string"`
-	Radius   float32            `json:"radius" bson:"radius"`
-	Points   []float32          `json:"points" bson:"points"`
-	Capacity int                `json:"capacity" bson:"capacity"`
+	Name     string             `json:"name" bson:"name" api:"updateble"`
+	Type     string             `json:"type" bson:"string" api:"updateble"`
+	Radius   float32            `json:"radius" bson:"radius" api:"updateble"`
+	Points   []float32          `json:"points" bson:"points" api:"updateble"`
+	Capacity int                `json:"capacity" bson:"capacity" api:"updateble"`
 }
 
 type Floor struct {
 	ID     primitive.ObjectID `json:"id" bson:"_id"`
-	Name   string             `json:"name" bson:"name"`
-	Number int                `json:"number" bson:"number"`
-	Image  string             `json:"image" bson:"image"`
+	Name   string             `json:"name" bson:"name" api:"updateble"`
+	Number int                `json:"number" bson:"number" api:"updateble"`
+	Image  string             `json:"image" bson:"image" api:"updateble"`
 	Zones  []Zone             `json:"zones" bson:"zones"`
 }
 
 type Area struct {
 	ID             primitive.ObjectID   `json:"id" bson:"_id"`
-	Name           string               `json:"name" bson:"name"`
+	Name           string               `json:"name" bson:"name" api:"updateble"`
 	CreatedAt      time.Time            `json:"created_at" bson:"created_at"`
 	UpdatedAt      time.Time            `json:"updated_at" bson:"updated_at"`
-	Administrators []primitive.ObjectID `json:"-" bson:"administrators"`
+	Administrators []primitive.ObjectID `json:"-" bson:"administrators" api:"updateble"`
 	Floors         []Floor              `json:"floors" bson:"floors"`
 }

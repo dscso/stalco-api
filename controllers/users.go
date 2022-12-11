@@ -14,10 +14,15 @@ import (
 )
 
 type CreateUserResponse struct {
-	Status string      `json:"status"`
+	Status string      `json:"status" default:"success"`
 	Data   models.User `json:"data"`
 }
 
+// CreateUser Creates a user
+// @Router /api/user/signup [post]
+// @Param User body models.User true "User"
+// @Description Sign up as new user
+// @Response 200 {object} CreateUserResponse
 func CreateUser(c *fiber.Ctx) error {
 	// converting json to struct
 	var user models.User
@@ -47,10 +52,14 @@ func CreateUser(c *fiber.Ctx) error {
 }
 
 type LoginUserResponse struct {
-	Status string                     `json:"status"`
+	Status string                     `json:"status" default:"success"`
 	Data   middleware.SessionDatabase `json:"data"`
 }
 
+// LoginUser logs in a user and returns a token
+// @Router /api/user/login [post]
+// @Param User body models.User true "User"
+// @Description log in
 func LoginUser(c *fiber.Ctx) error {
 	// converting json to struct
 	var user models.User

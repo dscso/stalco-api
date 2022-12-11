@@ -2,11 +2,13 @@ package db
 
 import (
 	"context"
+	"log"
+	"os"
+
+	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"log"
-	"os"
 )
 
 var DB *mongo.Database
@@ -38,5 +40,14 @@ func init() {
 	_, err = UsersCollection.Indexes().CreateOne(context.TODO(), model)
 	if err != nil {
 		log.Println(err.Error())
+	}
+}
+
+func ErrorHandler(err error) error {
+	if err == mongo.ErrNoDocuments {
+		return &fiber.Error{Message: "Not found in the Database", Code: fiber.StatusNotFound}
+	} else {
+		log.Println(err.Error())
+		return &fiber.Error{Message: "Internal server error", Code: fiber.StatusInternalServerError}
 	}
 }
