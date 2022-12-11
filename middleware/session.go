@@ -82,7 +82,7 @@ func NewSession(c *fiber.Ctx, user models.User) (*SessionDatabase, error) {
 
 	sessionDataSet := SessionDatabase{
 		SessionId:     primitive.NewObjectID(),
-		SessionSecret: base64.StdEncoding.EncodeToString([]byte(key)),
+		SessionSecret: base64.StdEncoding.EncodeToString(key),
 		UserID:        user.ID,
 		CreatedAt:     primitive.NewDateTimeFromTime(c.Context().Time()),
 		UpdatedAt:     primitive.NewDateTimeFromTime(c.Context().Time()),
