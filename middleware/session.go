@@ -2,17 +2,19 @@ package middleware
 
 import (
 	"context"
+	"crypto/rand"
 	"encoding/base64"
+	"strings"
+	"time"
+
 	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"math/rand"
+
 	"rest-go/db"
 	"rest-go/models"
-	"strings"
-	"time"
 )
 
 var sessionTime = 60 * 60 * 24 * 7 // 1 week
@@ -59,6 +61,7 @@ func Session(c *fiber.Ctx) error {
 	}
 	sessionId, err := primitive.ObjectIDFromHex(authString[0])
 	if err != nil {
+		// not authenticated
 		return c.Next()
 	}
 	sessionSecret := authString[1]

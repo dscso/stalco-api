@@ -8,6 +8,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"log"
 	"rest-go/middleware"
+	"rest-go/util"
 
 	"rest-go/db"
 	"rest-go/models"
@@ -32,7 +33,8 @@ func CreateUser(c *fiber.Ctx) error {
 	// hashing password
 	bytes, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return err
+		log.Println("Error with password hash function: ", err.Error())
+		return util.InternalServerError
 	}
 	user.Password = string(bytes)
 	user.ID = primitive.NewObjectID()
@@ -41,10 +43,10 @@ func CreateUser(c *fiber.Ctx) error {
 	_, err = db.UsersCollection.InsertOne(c.Context(), user)
 	if err != nil {
 		if mongo.IsDuplicateKeyError(err) {
-			println(err.Error())
 			return &fiber.Error{Message: "User already exists", Code: fiber.StatusConflict}
 		} else {
-			return &fiber.Error{Message: "Internal server error", Code: fiber.StatusInternalServerError}
+			log.Println("Mongo Error while inserting user: ", err.Error())
+			return util.InternalServerError
 		}
 	}
 
@@ -70,21 +72,13 @@ func LoginUser(c *fiber.Ctx) error {
 	var userFromDB models.User
 	err := db.UsersCollection.FindOne(c.Context(), bson.M{"email": user.Email}).Decode(&userFromDB)
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
-			return &fiber.Error{Message: "User not found", Code: fiber.StatusNotFound}
-		} else {
-			return &fiber.Error{Message: "Internal server error", Code: fiber.StatusInternalServerError}
-		}
+		return db.ErrorHandler(err)
 	}
 	// comparing passwords
 	if bcrypt.CompareHashAndPassword([]byte(userFromDB.Password), []byte(user.Password)) != nil {
 		return &fiber.Error{Message: "Incorrect password", Code: fiber.StatusUnauthorized}
 	}
-	// saving user in session
-	if err != nil {
-		log.Println(err.Error())
-		return &fiber.Error{Message: "Internal server error", Code: fiber.StatusInternalServerError}
-	}
+
 	sessionDataset, err := middleware.NewSession(c, userFromDB)
 	if err != nil {
 		return err

@@ -31,9 +31,7 @@ func StartServer() {
 	app.Use(logger.New())
 	api := app.Group("/api")
 	api.Use(middleware.Session)
-
 	{
-		//api.GET("/area", user.GetAllUser)
 		api.Post("/user/signup", controllers.CreateUser)
 		api.Post("/user/login", controllers.LoginUser)
 		api.Get("/protected", controllers.Protected)
@@ -41,9 +39,7 @@ func StartServer() {
 		api.Get("/area/:area_id", controllers.GetArea)
 		//api.Post("/area/:area_id/floors", controllers.EditFloorFactory(fiber.MethodPost))
 		api.Put("/area/:area_id/floors/:floor_id", controllers.EditFloor)
-
-		/*api.PUT("/users/:id", user.UpdateUser)
-		  api.DELETE("/users/:id", user.DeleteUser)*/
+		//api.Put("/area/:area_id/floors/:floor_id/zone")
 	}
 
 	app.Get("/ping", controllers.Ping)

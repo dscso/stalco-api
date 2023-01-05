@@ -16,6 +16,8 @@ var AreasCollection *mongo.Collection
 var UsersCollection *mongo.Collection
 var SessionsCollection *mongo.Collection
 
+//var SensorCollection *mongo.Collection
+
 func init() {
 	host := os.Getenv("MONGO_HOST")
 	dbName := os.Getenv("MONGO_DB_NAME")
@@ -31,6 +33,8 @@ func init() {
 	AreasCollection = DB.Collection("areas")
 	UsersCollection = DB.Collection("users")
 	SessionsCollection = DB.Collection("sessions")
+	//SensorCollection = DB.Collection("sensors")
+
 	model := mongo.IndexModel{
 		Keys: bson.M{
 			"email": 1,
