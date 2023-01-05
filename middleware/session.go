@@ -2,8 +2,8 @@ package middleware
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/base64"
+	"log"
+	"rest-go/util"
 	"strings"
 	"time"
 
@@ -69,6 +69,11 @@ func Session(c *fiber.Ctx) error {
 	var sessionDataSet SessionDatabase
 	if ok := db.SessionsCollection.FindOne(c.Context(), bson.M{"_id": sessionId}).Decode(&sessionDataSet); ok == nil {
 		if sessionDataSet.SessionSecret == sessionSecret {
+			// update last activity
+			_, err = db.SessionsCollection.UpdateOne(c.Context(), bson.M{"_id": sessionId}, bson.M{"$set": bson.M{"updated_at": primitive.NewDateTimeFromTime(c.Context().Time())}})
+			if err != nil {
+				log.Println(err)
+			}
 			sessAuth.Authenticated = true
 			sessAuth.UserID = sessionDataSet.UserID
 		}
@@ -77,15 +82,14 @@ func Session(c *fiber.Ctx) error {
 }
 
 func NewSession(c *fiber.Ctx, user models.User) (*SessionDatabase, error) {
-	key := make([]byte, 64)
-	_, err := rand.Read(key)
+	key, err := util.Create64ByteKey()
 	if err != nil {
 		return nil, err
 	}
 
 	sessionDataSet := SessionDatabase{
 		SessionId:     primitive.NewObjectID(),
-		SessionSecret: base64.StdEncoding.EncodeToString(key),
+		SessionSecret: key,
 		UserID:        user.ID,
 		CreatedAt:     primitive.NewDateTimeFromTime(c.Context().Time()),
 		UpdatedAt:     primitive.NewDateTimeFromTime(c.Context().Time()),

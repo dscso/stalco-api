@@ -1,7 +1,8 @@
 package util
 
 import (
-	"github.com/gofiber/fiber/v2"
+	"crypto/rand"
+	"encoding/base64"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -15,4 +16,11 @@ func ContainsObjectID(ids []primitive.ObjectID, id primitive.ObjectID) bool {
 	return false
 }
 
-var InternalServerError = &fiber.Error{Message: "Internal server error", Code: fiber.StatusInternalServerError}
+func Create64ByteKey() (string, error) {
+	key := make([]byte, 64)
+	_, err := rand.Read(key)
+	if err != nil {
+		return "", err
+	}
+	return base64.StdEncoding.EncodeToString(key), nil
+}
