@@ -14,11 +14,12 @@ type CreateSensorResponse struct {
 	Data   models.SensorModel
 }
 
-// CreateUser Creates a user
+// CreateSensor Creates a sensor
 // @Router /sensors/ [post]
-// @Param User body models.SensorModel
+// @Param Sensor body models.SensorModel true "Sensor"
 // @Description create new sensor
 // @Response 200 {object} CreateSensorResponse
+// @Security ApiKeyAuth
 func CreateSensor(c *fiber.Ctx) error {
 	user := c.Locals("session").(*middleware.SessionAuthenticated)
 	if user.Authenticated == false {
