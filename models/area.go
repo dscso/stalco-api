@@ -10,7 +10,7 @@ import (
 type Zone struct {
 	ID       primitive.ObjectID `json:"id" bson:"_id"`
 	Name     string             `json:"name" bson:"name" api:"updateble"`
-	Type     string             `json:"type" bson:"string" api:"updateble"`
+	Type     string             `json:"type" bson:"type" api:"updateble"`
 	Radius   float32            `json:"radius" bson:"radius" api:"updateble"`
 	Points   []float32          `json:"points" bson:"points" api:"updateble"`
 	Capacity int                `json:"capacity" bson:"capacity" api:"updateble"`

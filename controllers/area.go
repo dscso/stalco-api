@@ -16,6 +16,29 @@ type GetAreaResponse struct {
 	Data   models.Area `json:"data"`
 }
 
+// fetches area from database and checks if user is an administrator
+func getAreaForUser(c *fiber.Ctx) (*models.Area, error) {
+	session := c.Locals("session").(*middleware.SessionAuthenticated)
+	areaIdString := c.AllParams()["area_id"]
+
+	areaId, err := primitive.ObjectIDFromHex(areaIdString)
+	if err != nil {
+		return nil, &fiber.Error{Message: "Invalid ID", Code: fiber.StatusBadRequest}
+	}
+
+	var area models.Area
+
+	err = db.AreasCollection.FindOne(c.Context(), bson.M{"_id": areaId}).Decode(&area)
+	if err != nil {
+		return nil, db.ErrorHandler(err)
+	}
+
+	if !util.ContainsObjectID(area.Administrators, session.UserID) {
+		return nil, &fiber.Error{Message: "You are not an administrator of this area", Code: fiber.StatusUnauthorized}
+	}
+	return &area, nil
+}
+
 // GetArea gets an area by id
 // @Router /api/area/{area_id} [get]
 // @Param area_id path string true "Area ID"
@@ -29,17 +52,55 @@ func GetArea(c *fiber.Ctx) error {
 		return &fiber.Error{Message: "Invalid ID", Code: fiber.StatusBadRequest}
 	}
 
-	var ar models.Area
+	var area models.Area
 
-	err = db.AreasCollection.FindOne(c.Context(), bson.M{"_id": id}).Decode(&ar)
+	err = db.AreasCollection.FindOne(c.Context(), bson.M{"_id": id}).Decode(&area)
 
 	if err != nil {
-		if err != nil {
-			return db.ErrorHandler(err)
-		}
+		return db.ErrorHandler(err)
 	}
 
-	return c.JSON(GetAreaResponse{Status: "success", Data: ar})
+	return c.JSON(GetAreaResponse{Status: "success", Data: area})
+}
+
+type EditAreaResponse struct {
+	Status string      `json:"status"`
+	Data   models.Area `json:"data"`
+}
+
+// EditArea edits an area by id
+// @Router /api/area/{area_id} [put]
+// @Param area_id path string true "Area ID"
+// @Description Edit an area by id
+// @Response 200 {object} EditAreaResponse
+// @Security ApiKeyAuth
+func EditArea(c *fiber.Ctx) error {
+	areaInDB, err := getAreaForUser(c)
+	if err != nil {
+		return err
+	}
+
+	area := *areaInDB // for modifying the area
+	if err := c.BodyParser(&area); err != nil {
+		return err
+	}
+
+	newAreaJson := db.ConvertStructToBsonM(&area, "updateble", "")
+
+	filter := bson.D{{"_id", areaInDB.ID}}
+	newAreaJson["updated_at"] = time.Now()
+	update := bson.D{{"$set", newAreaJson}}
+
+	result, err := db.AreasCollection.UpdateOne(c.Context(), filter, update)
+
+	if err != nil {
+		return db.ErrorHandler(err)
+	}
+	if result.MatchedCount == 0 {
+		return &fiber.Error{Code: fiber.StatusNotFound, Message: "area not found"}
+	}
+	// read again from database to get the updated data
+	return GetArea(c)
 }
 
 type EditFloorResponse struct {
@@ -48,30 +109,20 @@ type EditFloorResponse struct {
 }
 
 func EditFloor(c *fiber.Ctx) error {
-	session := c.Locals("session").(*middleware.SessionAuthenticated)
-	areaIdString := c.AllParams()["area_id"]
+	areaInDB, err := getAreaForUser(c)
+	if err != nil {
+		return err
+	}
+
 	floorIdString := c.AllParams()["floor_id"]
-
-	areaId, err := primitive.ObjectIDFromHex(areaIdString)
-	floorId, err2 := primitive.ObjectIDFromHex(floorIdString)
-
-	if err != nil || err2 != nil {
+	floorId, err := primitive.ObjectIDFromHex(floorIdString)
+	if err != nil {
 		return &fiber.Error{Message: "Invalid ID", Code: fiber.StatusBadRequest}
 	}
 
-	var ar models.Area
-	err = db.AreasCollection.FindOne(c.Context(), bson.M{"_id": areaId}).Decode(&ar)
-	if err != nil {
-		return db.ErrorHandler(err)
-	}
-
-	if !util.ContainsObjectID(ar.Administrators, session.UserID) {
-		return &fiber.Error{Message: "You are not an administrator of this area", Code: fiber.StatusUnauthorized}
-	}
-
 	var floor models.Floor
-
-	for _, v := range ar.Floors {
+	// find floor in area
+	for _, v := range areaInDB.Floors {
 		if v.ID == floorId {
 			floor = v
 		}
@@ -83,7 +134,7 @@ func EditFloor(c *fiber.Ctx) error {
 
 	newFloorBson := db.ConvertStructToBsonM(&floor, "updateble", "floors.$.")
 
-	filter := bson.D{{"_id", areaId}, {"floors._id", floorId}}
+	filter := bson.D{{"_id", areaInDB.ID}, {"floors._id", floorId}}
 	newFloorBson["updated_at"] = time.Now()
 	update := bson.D{{"$set", newFloorBson}}
 	result, err := db.AreasCollection.UpdateOne(c.Context(), filter, update)

@@ -37,10 +37,11 @@ func StartServer() {
 		api.Get("/protected", controllers.Protected)
 		//api.POST("/user/refresh", controllers.RefreshToken)
 		api.Get("/area/:area_id", controllers.GetArea)
+		api.Put("/area/:area_id", controllers.EditArea)
 		//api.Post("/area/:area_id/floors", controllers.EditFloorFactory(fiber.MethodPost))
 		api.Put("/area/:area_id/floors/:floor_id", controllers.EditFloor)
 		//api.Put("/area/:area_id/floors/:floor_id/zone")
-		api.Post("/sensors", controllers.CreateSensor)
+		api.Post("/area/:area_id/sensors", controllers.CreateSensor)
 	}
 
 	app.Get("/ping", controllers.Ping)
