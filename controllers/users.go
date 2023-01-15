@@ -30,6 +30,10 @@ func CreateUser(c *fiber.Ctx) error {
 	if err := c.BodyParser(&user); err != nil {
 		return err
 	}
+	// todo better validation
+	if len(user.Email) == 0 {
+		return &fiber.Error{Message: "Email is required", Code: fiber.StatusBadRequest}
+	}
 	// hashing password
 	bytes, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
