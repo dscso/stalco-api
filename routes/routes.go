@@ -5,8 +5,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/swagger"
-	"log"
-	"os"
+
 	"rest-go/controllers"
 	_ "rest-go/docs"
 	"rest-go/middleware"
@@ -32,16 +31,15 @@ func StartServer() {
 
 	app.Use(logger.New())
 
-	if os.Getenv("CORS") != "" {
-		log.Println("CORS enabled for " + os.Getenv("CORS"))
-		app.Use(cors.New())
+	// Default config
+	app.Use(cors.New())
 
-		// Or extend your config for customization
-		app.Use(cors.New(cors.Config{
-			AllowOrigins: os.Getenv("CORS"),
-			AllowHeaders: "Origin, Content-Type, Accept",
-		}))
-	}
+	// Or extend your config for customization
+	app.Use(cors.New(cors.Config{
+		AllowOrigins: "http://localhost, https://stalko.tk, http://localhost:3000",
+		AllowHeaders: "Origin, Content-Type, Accept",
+	}))
+
 	api := app.Group("/api")
 	api.Use(middleware.Session)
 	{
