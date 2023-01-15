@@ -45,7 +45,7 @@ func StartServer() {
 	{
 		api.Post("/user/signup", controllers.CreateUser)
 		api.Post("/user/login", controllers.LoginUser)
-		api.Get("/protected", controllers.Protected)
+		api.Get("/user/info", controllers.Protected)
 
 		api.Get("/area/:area_id", controllers.GetArea)
 		api.Put("/area/:area_id", controllers.EditArea)
@@ -56,7 +56,8 @@ func StartServer() {
 		api.Put("/area/:area_id/floors/:floor_id/zones/:zone_id", controllers.EditZone)
 		api.Get("/area/:area_id/floors/:floor_id/zones/:zone_id", controllers.GetZone)
 
-		api.Post("/area/:area_id/sensors", controllers.CreateSensor)
+		api.Post("/area/:area_id/sensor", controllers.CreateSensor)
+		api.Get("/area/:area_id/sensor", controllers.GetSensors)
 	}
 
 	app.Get("/ping", controllers.Ping)

@@ -87,11 +87,44 @@ func LoginUser(c *fiber.Ctx) error {
 	return c.JSON(LoginUserResponse{Status: "success", Data: *sessionDataset})
 }
 
+type UserObjectForResponse struct {
+	ID    primitive.ObjectID `json:"id" bson:"_id"`
+	Email string             `json:"email"`
+	Areas []string           `json:"areas"`
+}
+type UserInfoResponse struct {
+	Status  string                 `json:"status" default:"success"`
+	Message string                 `json:"message"`
+	User    *UserObjectForResponse `json:"user"`
+}
+
 func Protected(c *fiber.Ctx) error {
 	user := c.Locals("session").(*util.SessionAuthenticated)
 
-	if user.Authenticated {
-		return c.JSON(fiber.Map{"message": "Welcome " + user.UserID.Hex() + "!"})
+	if !user.Authenticated {
+		return c.JSON(UserInfoResponse{Status: "error", Message: "Not authenticated"})
 	}
-	return c.JSON(fiber.Map{"message": "Not authenticated!"})
+
+	// query all areas, user is administrator of
+	var areas []string
+	cursor, err := db.AreasCollection.Find(c.Context(), bson.M{"administrators": user.UserID})
+	if err != nil {
+		return db.ErrorHandler(err)
+	}
+	for cursor.Next(c.Context()) {
+		var area models.Area
+		err := cursor.Decode(&area)
+		if err != nil {
+			return db.ErrorHandler(err)
+		}
+		areas = append(areas, area.ID.Hex())
+	}
+	// get email
+	var userFromDB models.User
+	err = db.UsersCollection.FindOne(c.Context(), bson.M{"_id": user.UserID}).Decode(&userFromDB)
+	if err != nil {
+		return db.ErrorHandler(err)
+	}
+
+	return c.JSON(UserInfoResponse{Status: "success", Message: "Authenticated", User: &UserObjectForResponse{ID: user.UserID, Email: userFromDB.Email, Areas: areas}})
 }

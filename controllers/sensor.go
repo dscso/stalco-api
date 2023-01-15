@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"rest-go/db"
 	"rest-go/models"
@@ -20,9 +21,9 @@ type CreateSensorResponse struct {
 // @Response 200 {object} CreateSensorResponse
 // @Security ApiKeyAuth
 func CreateSensor(c *fiber.Ctx) error {
-	user := c.Locals("session").(*util.SessionAuthenticated)
-	if user.Authenticated == false {
-		return util.UnauthorizedError
+	area, err := db.GetArea(c)
+	if err != nil {
+		return err
 	}
 	// converting json to struct
 	var sensor models.SensorModel
@@ -37,6 +38,7 @@ func CreateSensor(c *fiber.Ctx) error {
 
 	sensor.ID = primitive.NewObjectID()
 	sensor.Key = key
+	sensor.Area = area.ID
 
 	// inserting user in database
 	_, err = db.SensorCollection.InsertOne(c.Context(), sensor)
@@ -45,4 +47,22 @@ func CreateSensor(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(CreateSensorResponse{Status: "success", Data: sensor})
+}
+
+func GetSensors(c *fiber.Ctx) error {
+	area, err := db.GetArea(c)
+	if err != nil {
+		return err
+	}
+	// query form sensor collection all sensors who are associated with the area
+	filter := bson.D{{"area", area.ID}}
+	cursor, err := db.SensorCollection.Find(c.Context(), filter)
+	if err != nil {
+		return db.ErrorHandler(err)
+	}
+	var sensors []models.SensorModel
+	if err = cursor.All(c.Context(), &sensors); err != nil {
+		return db.ErrorHandler(err)
+	}
+	return c.JSON(sensors)
 }

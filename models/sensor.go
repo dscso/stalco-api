@@ -5,8 +5,11 @@ import (
 )
 
 type SensorModel struct {
-	ID  primitive.ObjectID `json:"id" bson:"_id"`
-	Key string             `json:"key" bson:"key"`
+	ID   primitive.ObjectID `json:"id" bson:"_id"`
+	Name string             `json:"name" bson:"name" api:"updateble"`
+	Type string             `json:"type" bson:"type" api:"updateble"`
+	Key  string             `json:"-" bson:"key"`
+	Area primitive.ObjectID `json:"area" bson:"area"`
 }
 
 type SensorData struct {
