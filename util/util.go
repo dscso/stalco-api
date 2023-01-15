@@ -24,3 +24,8 @@ func Create64ByteKey() (string, error) {
 	}
 	return base64.StdEncoding.EncodeToString(key), nil
 }
+
+type SessionAuthenticated struct {
+	Authenticated bool
+	UserID        primitive.ObjectID
+}

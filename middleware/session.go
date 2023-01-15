@@ -19,10 +19,6 @@ import (
 
 var sessionTime = 60 * 60 * 24 * 7 // 1 week
 
-type SessionAuthenticated struct {
-	Authenticated bool
-	UserID        primitive.ObjectID
-}
 type SessionDatabase struct {
 	SessionId     primitive.ObjectID `json:"session_id" bson:"_id"`
 	SessionSecret string             `json:"session_secret" bson:"session_secret"`
@@ -47,7 +43,7 @@ func InitSessions() {
 }
 
 func Session(c *fiber.Ctx) error {
-	sessAuth := SessionAuthenticated{Authenticated: false}
+	sessAuth := util.SessionAuthenticated{Authenticated: false}
 	c.Locals("session", &sessAuth)
 
 	cookie := c.Cookies("auth", "None")

@@ -88,7 +88,7 @@ func LoginUser(c *fiber.Ctx) error {
 }
 
 func Protected(c *fiber.Ctx) error {
-	user := c.Locals("session").(*middleware.SessionAuthenticated)
+	user := c.Locals("session").(*util.SessionAuthenticated)
 
 	if user.Authenticated {
 		return c.JSON(fiber.Map{"message": "Welcome " + user.UserID.Hex() + "!"})

@@ -6,9 +6,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"rest-go/db"
-	"rest-go/middleware"
 	"rest-go/models"
-	"rest-go/util"
 	"time"
 )
 
@@ -17,51 +15,17 @@ type GetAreaResponse struct {
 	Data   models.Area `json:"data"`
 }
 
-// fetches area from database and checks if user is an administrator
-func getAreaForUser(c *fiber.Ctx) (*models.Area, error) {
-	session := c.Locals("session").(*middleware.SessionAuthenticated)
-	areaIdString := c.AllParams()["area_id"]
-
-	areaId, err := primitive.ObjectIDFromHex(areaIdString)
-	if err != nil {
-		return nil, &fiber.Error{Message: "Invalid ID", Code: fiber.StatusBadRequest}
-	}
-
-	var area models.Area
-
-	err = db.AreasCollection.FindOne(c.Context(), bson.M{"_id": areaId}).Decode(&area)
-	if err != nil {
-		return nil, db.ErrorHandler(err)
-	}
-
-	if !util.ContainsObjectID(area.Administrators, session.UserID) {
-		return nil, &fiber.Error{Message: "You are not an administrator of this area", Code: fiber.StatusUnauthorized}
-	}
-	return &area, nil
-}
-
 // GetArea gets an area by id
 // @Router /api/area/{area_id} [get]
 // @Param area_id path string true "Area ID"
 // @Description Get an area by id
 // @Response 200 {object} GetAreaResponse
 func GetArea(c *fiber.Ctx) error {
-	idString := c.AllParams()["area_id"]
-
-	id, err := primitive.ObjectIDFromHex(idString)
+	area, err := db.GetArea(c)
 	if err != nil {
-		return &fiber.Error{Message: "Invalid ID", Code: fiber.StatusBadRequest}
+		return err
 	}
-
-	var area models.Area
-
-	err = db.AreasCollection.FindOne(c.Context(), bson.M{"_id": id}).Decode(&area)
-
-	if err != nil {
-		return db.ErrorHandler(err)
-	}
-
-	return c.JSON(GetAreaResponse{Status: "success", Data: area})
+	return c.JSON(GetAreaResponse{Status: "success", Data: *area})
 }
 
 type EditAreaResponse struct {
@@ -76,7 +40,7 @@ type EditAreaResponse struct {
 // @Response 200 {object} EditAreaResponse
 // @Security ApiKeyAuth
 func EditArea(c *fiber.Ctx) error {
-	areaInDB, err := getAreaForUser(c)
+	areaInDB, err := db.GetAreaForUser(c)
 	if err != nil {
 		return err
 	}
@@ -104,38 +68,41 @@ func EditArea(c *fiber.Ctx) error {
 	return GetArea(c)
 }
 
+type GetFloorResponse struct {
+	Status string       `json:"status"`
+	Data   models.Floor `json:"data"`
+}
+
+func GetFloor(c *fiber.Ctx) error {
+	areaInDB, err := db.GetArea(c)
+	if err != nil {
+		return err
+	}
+	floor, err := db.GetFloor(c, areaInDB)
+	if err != nil {
+		return err
+	}
+	return c.JSON(GetFloorResponse{Status: "success", Data: *floor})
+}
+
 type EditFloorResponse struct {
 	Status string       `json:"status"`
 	Data   models.Floor `json:"data"`
 }
 
-func getFloor(c *fiber.Ctx, area *models.Area) (*models.Floor, error) {
-	floorIdString := c.AllParams()["floor_id"]
-	floorId, err := primitive.ObjectIDFromHex(floorIdString)
-	if err != nil {
-		return nil, &fiber.Error{Message: "Invalid ID", Code: fiber.StatusBadRequest}
-	}
-
-	var floor models.Floor
-	found := false
-	// find floor in area
-	for _, v := range area.Floors {
-		if v.ID == floorId {
-			floor = v
-			found = true
-		}
-	}
-	if !found {
-		return nil, &fiber.Error{Message: "Floor not found", Code: fiber.StatusNotFound}
-	}
-	return &floor, nil
-}
+// EditFloor edits a floor from an area
+// @Router /api/area/{area_id}/floor/{floor_id} [put]
+// @Param area_id path string true "Area ID"
+// @Param floor_id path string true "Floor ID"
+// @Description Edit a floor from an area
+// @Response 200 {object} EditFloorResponse
+// @Security ApiKeyAuth
 func EditFloor(c *fiber.Ctx) error {
-	areaInDB, err := getAreaForUser(c)
+	areaInDB, err := db.GetAreaForUser(c)
 	if err != nil {
 		return err
 	}
-	floor, err := getFloor(c, areaInDB)
+	floor, err := db.GetFloor(c, areaInDB)
 	if err != nil {
 		return err
 	}
@@ -160,26 +127,33 @@ func EditFloor(c *fiber.Ctx) error {
 	return c.JSON(EditFloorResponse{Status: "success", Data: *floor})
 }
 
-func getZone(c *fiber.Ctx, floor *models.Floor) (*models.Zone, error) {
-	zoneIdString := c.AllParams()["zone_id"]
-	zoneId, err := primitive.ObjectIDFromHex(zoneIdString)
-	if err != nil {
-		return nil, &fiber.Error{Message: "Invalid ID", Code: fiber.StatusBadRequest}
-	}
+type GetZoneResponse struct {
+	Status string      `json:"status"`
+	Data   models.Zone `json:"data"`
+}
 
-	var zone models.Zone
-	found := false
-	// find floor in area
-	for _, v := range floor.Zones {
-		if v.ID == zoneId {
-			zone = v
-			found = true
-		}
+// GetZone gets a zone from an area
+// @Router /api/area/{area_id}/floor/{floor_id}/zone/{zone_id} [get]
+// @Param area_id path string true "Area ID"
+// @Param floor_id path string true "Floor ID"
+// @Param zone_id path string true "Zone ID"
+// @Description Get a zone from an area
+// @Response 200 {object} GetZoneResponse
+
+func GetZone(c *fiber.Ctx) error {
+	areaInDB, err := db.GetArea(c)
+	if err != nil {
+		return err
 	}
-	if !found {
-		return nil, &fiber.Error{Message: "Zone not found", Code: fiber.StatusNotFound}
+	floor, err := db.GetFloor(c, areaInDB)
+	if err != nil {
+		return err
 	}
-	return &zone, nil
+	zone, err := db.GetZone(c, floor)
+	if err != nil {
+		return err
+	}
+	return c.JSON(GetZoneResponse{Status: "success", Data: *zone})
 }
 
 type EditZoneResponse struct {
@@ -187,22 +161,29 @@ type EditZoneResponse struct {
 	Data   models.Zone `json:"data"`
 }
 
+// EditZone edits a zone from a floor
+// @Router /api/area/{area_id}/floor/{floor_id}/zone/{zone_id} [put]
+// @Param area_id path string true "Area ID"
+// @Param floor_id path string true "Floor ID"
+// @Param zone_id path string true "Zone ID"
+// @Description Edit a zone from a floor
+// @Response 200 {object} EditZoneResponse
+// @Security ApiKeyAuth
 func EditZone(c *fiber.Ctx) error {
-
-	areaInDB, err := getAreaForUser(c)
+	areaInDB, err := db.GetAreaForUser(c)
 	if err != nil {
 		return err
 	}
 
-	floorInDB, err := getFloor(c, areaInDB)
+	floorInDB, err := db.GetFloor(c, areaInDB)
 	if err != nil {
 		return err
 	}
-	zoneInDB, err := getZone(c, floorInDB)
+	zoneInDB, err := db.GetZone(c, floorInDB)
 	if err != nil {
 		return err
 	}
-	zone := *zoneInDB
+	zone := *zoneInDB // this is just nessesary because of the arrays used in the struct
 	if err := c.BodyParser(&zone); err != nil {
 		return err
 	}
@@ -214,6 +195,7 @@ func EditZone(c *fiber.Ctx) error {
 	newZoneBson["updated_at"] = time.Now()
 	update := bson.M{"$set": newZoneBson}
 
+	// I hope I will never have to debug this
 	arrayFilters := options.FindOneAndUpdate().SetArrayFilters(options.ArrayFilters{
 		Filters: []interface{}{
 			bson.D{
@@ -231,6 +213,7 @@ func EditZone(c *fiber.Ctx) error {
 		return db.ErrorHandler(err)
 	}
 
+	// todo read again from database to get the updated data
 	var b bson.M
 	res.Decode(&b)
 	return c.JSON(b)

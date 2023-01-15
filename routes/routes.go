@@ -35,13 +35,16 @@ func StartServer() {
 		api.Post("/user/signup", controllers.CreateUser)
 		api.Post("/user/login", controllers.LoginUser)
 		api.Get("/protected", controllers.Protected)
-		//api.POST("/user/refresh", controllers.RefreshToken)
+
 		api.Get("/area/:area_id", controllers.GetArea)
 		api.Put("/area/:area_id", controllers.EditArea)
-		//api.Post("/area/:area_id/floors", controllers.EditFloorFactory(fiber.MethodPost))
+
 		api.Put("/area/:area_id/floors/:floor_id", controllers.EditFloor)
+		api.Get("/area/:area_id/floors/:floor_id", controllers.GetFloor)
+
 		api.Put("/area/:area_id/floors/:floor_id/zones/:zone_id", controllers.EditZone)
-		//api.Put("/area/:area_id/floors/:floor_id/zone")
+		api.Get("/area/:area_id/floors/:floor_id/zones/:zone_id", controllers.GetZone)
+
 		api.Post("/area/:area_id/sensors", controllers.CreateSensor)
 	}
 

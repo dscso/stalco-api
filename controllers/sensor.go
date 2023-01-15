@@ -4,7 +4,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"rest-go/db"
-	"rest-go/middleware"
 	"rest-go/models"
 	"rest-go/util"
 )
@@ -15,13 +14,13 @@ type CreateSensorResponse struct {
 }
 
 // CreateSensor Creates a sensor
-// @Router /sensors/ [post]
+// @Router /area/:area_id/sensors [post]
 // @Param Sensor body models.SensorModel true "Sensor"
 // @Description create new sensor
 // @Response 200 {object} CreateSensorResponse
 // @Security ApiKeyAuth
 func CreateSensor(c *fiber.Ctx) error {
-	user := c.Locals("session").(*middleware.SessionAuthenticated)
+	user := c.Locals("session").(*util.SessionAuthenticated)
 	if user.Authenticated == false {
 		return util.UnauthorizedError
 	}
