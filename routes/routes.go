@@ -40,6 +40,7 @@ func StartServer() {
 		api.Put("/area/:area_id", controllers.EditArea)
 		//api.Post("/area/:area_id/floors", controllers.EditFloorFactory(fiber.MethodPost))
 		api.Put("/area/:area_id/floors/:floor_id", controllers.EditFloor)
+		api.Put("/area/:area_id/floors/:floor_id/zones/:zone_id", controllers.EditZone)
 		//api.Put("/area/:area_id/floors/:floor_id/zone")
 		api.Post("/area/:area_id/sensors", controllers.CreateSensor)
 	}
