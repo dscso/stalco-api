@@ -47,6 +47,7 @@ func StartServer() {
 		api.Post("/user/login", controllers.LoginUser)
 		api.Get("/user/info", controllers.Protected)
 
+		api.Get("/area/list", controllers.GetAreas)
 		api.Get("/area/:area_id", controllers.GetArea)
 		api.Put("/area/:area_id", controllers.EditArea)
 

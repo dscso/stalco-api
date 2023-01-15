@@ -10,6 +10,35 @@ import (
 	"time"
 )
 
+type ListAreasResponse struct {
+	Status string        `json:"status"`
+	Data   []models.Area `json:"data"`
+}
+
+// Get all zones for frontend listing
+// @Router /api/area/list [get]
+// @Description Get all zones for frontend listing
+// @Response 200 {object} ListAreasResponse
+func GetAreas(c *fiber.Ctx) error {
+	// get all areas
+	projection := bson.D{{"name", 1}, {"description", 1}, {"created_at", 1}, {"updated_at", 1}}
+	opts := options.Find().SetProjection(projection)
+	cursor, err := db.AreasCollection.Find(c.Context(), bson.M{}, opts)
+	if err != nil {
+		return err
+	}
+	var areas []models.Area
+	for cursor.Next(c.Context()) {
+		var area models.Area
+		err := cursor.Decode(&area)
+		if err != nil {
+			return err
+		}
+		areas = append(areas, area)
+	}
+	return c.JSON(ListAreasResponse{Status: "success", Data: areas})
+}
+
 type GetAreaResponse struct {
 	Status string      `json:"status"`
 	Data   models.Area `json:"data"`
