@@ -1,5 +1,6 @@
 FROM golang:1.17 AS build-env
 
+RUN mkdir /rest-go
 ADD Makefile /rest-go
 ADD go.mod /rest-go
 ADD go.sum /rest-go
