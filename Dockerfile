@@ -1,8 +1,13 @@
 FROM golang:1.17 AS build-env
 
-ADD . /rest-go
+ADD Makefile /rest-go
+ADD go.mod /rest-go
+ADD go.sum /rest-go
+
 WORKDIR /rest-go
 RUN make install
+
+ADD . /rest-go
 RUN make build
 
 # Final stage
