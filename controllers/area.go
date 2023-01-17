@@ -20,8 +20,14 @@ type ListAreasResponse struct {
 // @Description Get all areas for frontend listing
 // @Response 200 {object} ListAreasResponse
 func GetAreas(c *fiber.Ctx) error {
-	// get all areas
-	projection := bson.D{{"name", 1}, {"description", 1}, {"created_at", 1}, {"updated_at", 1}}
+	// only get these fields form mongodb
+	projection := bson.D{
+		{"name", 1},
+		{"description", 1},
+		{"image", 1},
+		{"created_at", 1},
+		{"updated_at", 1},
+	}
 	opts := options.Find().SetProjection(projection)
 	cursor, err := db.AreasCollection.Find(c.Context(), bson.M{}, opts)
 	if err != nil {
@@ -245,5 +251,5 @@ func EditZone(c *fiber.Ctx) error {
 	// todo read again from database to get the updated data
 	var b bson.M
 	res.Decode(&b)
-	return c.JSON(b)
+	return GetZone(c)
 }
