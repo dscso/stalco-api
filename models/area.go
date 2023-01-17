@@ -26,6 +26,7 @@ type Floor struct {
 
 type Area struct {
 	ID             primitive.ObjectID   `json:"id" bson:"_id"`
+	Image          string               `json:"image" bson:"image" api:"updateble"`
 	Name           string               `json:"name" bson:"name" api:"updateble"`
 	CreatedAt      time.Time            `json:"created_at" bson:"created_at"`
 	UpdatedAt      time.Time            `json:"updated_at" bson:"updated_at"`

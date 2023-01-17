@@ -49,6 +49,11 @@ func CreateSensor(c *fiber.Ctx) error {
 	return c.JSON(CreateSensorResponse{Status: "success", Data: sensor})
 }
 
+// Get sensors
+// @Router /area/:area_id/sensors [get]
+// @Description get all sensors
+// @Response 200 {object} []models.SensorModel
+// @Security ApiKeyAuth
 func GetSensors(c *fiber.Ctx) error {
 	area, err := db.GetArea(c)
 	if err != nil {

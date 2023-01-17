@@ -15,9 +15,9 @@ type ListAreasResponse struct {
 	Data   []models.Area `json:"data"`
 }
 
-// Get all zones for frontend listing
+// Get all areas for frontend listing
 // @Router /api/area/list [get]
-// @Description Get all zones for frontend listing
+// @Description Get all areas for frontend listing
 // @Response 200 {object} ListAreasResponse
 func GetAreas(c *fiber.Ctx) error {
 	// get all areas
