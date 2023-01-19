@@ -8,6 +8,7 @@ import (
 	"rest-go/db"
 	"rest-go/models"
 	"rest-go/util"
+	"time"
 )
 
 type CreateSensorResponse struct {
@@ -114,4 +115,49 @@ func GetSensorByArea(c *fiber.Ctx) error {
 		return db.ErrorHandler(err)
 	}
 	return c.JSON(GetSensorByAreaResponse{Status: "success", Data: sensorData})
+}
+
+type sensorData struct {
+	Data int       `json:"data"`
+	Key  string    `json:"key"`
+	Time time.Time `json:"time"`
+}
+
+func CreateMeasure(c *fiber.Ctx) error {
+	// get sensorid from context
+	idString := c.AllParams()["sensor_id"]
+
+	id, err := primitive.ObjectIDFromHex(idString)
+	if err != nil {
+		return &fiber.Error{Message: "Invalid ID", Code: fiber.StatusBadRequest}
+	}
+	// get sensor from database
+	filter := bson.D{{"_id", id}}
+	var sensor models.SensorModel
+	err = db.SensorCollection.FindOne(c.Context(), filter).Decode(&sensor)
+	if err != nil {
+		return db.ErrorHandler(err)
+	}
+	// get data from body
+	var data sensorData
+	if err := c.BodyParser(&data); err != nil {
+		return err
+	}
+	// check if key is correct
+	if sensor.Key != data.Key {
+		return &fiber.Error{Message: "Invalid Key", Code: fiber.StatusBadRequest}
+	}
+	// create sensor data
+	sensorData := models.SensorData{
+		ID:       primitive.NewObjectID(),
+		SensorID: sensor.ID,
+		Data:     data.Data,
+		Time:     data.Time,
+	}
+	// insert sensor data in database
+	_, err = db.SensorDataCollection.InsertOne(c.Context(), sensorData)
+	if err != nil {
+		return db.ErrorHandler(err)
+	}
+	return c.JSON(fiber.Map{"status": "success", "data": sensorData})
 }

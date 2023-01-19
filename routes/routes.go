@@ -59,6 +59,8 @@ func StartServer() {
 
 		api.Post("/area/:area_id/sensor", controllers.CreateSensor)
 		api.Get("/area/:area_id/sensor", controllers.GetSensors)
+
+		api.Post("/sensor/:sensor_id/measure", controllers.CreateMeasure)
 	}
 
 	app.Get("/ping", controllers.Ping)
