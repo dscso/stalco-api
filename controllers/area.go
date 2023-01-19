@@ -253,3 +253,56 @@ func EditZone(c *fiber.Ctx) error {
 	res.Decode(&b)
 	return GetZone(c)
 }
+
+type ZoneIdData struct {
+	ID   primitive.ObjectID `json:"id" bson:"_id"`
+	Data int                `json:"data" bson:"data"`
+	Time time.Time          `json:"time" bson:"time"`
+}
+
+type GetSensorDataResponse struct {
+	Status string       `json:"status"`
+	Data   []ZoneIdData `json:"data"`
+}
+
+func GetSensorData(c *fiber.Ctx) error {
+	areaInDB, err := db.GetArea(c)
+	if err != nil {
+		print("area not found")
+		return err
+	}
+	var data []ZoneIdData
+	for _, floor := range areaInDB.Floors {
+		for _, zone := range floor.Zones {
+			// query sensor in database that has the same id as the zone
+			filter := bson.D{{"zone", zone.ID}}
+			var sensor models.SensorModel
+			err := db.SensorCollection.FindOne(c.Context(), filter).Decode(&sensor)
+			if err != nil {
+				continue
+			}
+			print("asdasd")
+			// get the last sensor data
+			var sensorData models.SensorData
+			dayString := c.Query("day")
+			//convert daystring to time
+			filter = bson.D{{"_id", sensor.ID}}
+			day, err := time.Parse("02.01.2006", dayString)
+			if err == nil {
+				println(day.String())
+			}
+			opt := options.Find().SetSort(bson.D{{"date", -1}}).SetLimit(1)
+			courser, err := db.SensorDataCollection.Find(c.Context(), filter, opt)
+
+			for courser.Next(c.Context()) {
+				err := courser.Decode(&sensorData)
+				if err != nil {
+					return db.ErrorHandler(err)
+				}
+			}
+			data = append(data, ZoneIdData{ID: zone.ID, Data: sensorData.Data, Time: sensorData.Time})
+
+		}
+	}
+	return c.JSON(GetSensorDataResponse{Status: "success", Data: data})
+}
