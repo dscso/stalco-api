@@ -284,14 +284,14 @@ func GetSensorData(c *fiber.Ctx) error {
 			print("asdasd")
 			// get the last sensor data
 			var sensorData models.SensorData
-			dayString := c.Query("day")
 			//convert daystring to time
 			filter = bson.D{{"sensor_id", sensor.ID}}
-			day, err := time.Parse("02.01.2006", dayString)
-			if err == nil {
-				filter = append(filter, bson.E{Key: "time", Value: bson.D{{"$gte", day}}})
+			from, err := time.Parse("2006-01-02T15:04:05.000Z", c.Query("from"))
+			to, err2 := time.Parse("2006-01-02T15:04:05.000Z", c.Query("to"))
+			if err == nil && err2 == nil {
+				filter = append(filter, bson.E{Key: "time", Value: bson.D{{"$lte", to}, {"$gte", from}}})
 			}
-			opt := options.Find().SetSort(bson.D{{"date", -1}}).SetLimit(1)
+			opt := options.Find().SetSort(bson.D{{"time", -1}}).SetLimit(1)
 			courser, err := db.SensorDataCollection.Find(c.Context(), filter, opt)
 			found := false
 			for courser.Next(c.Context()) {
