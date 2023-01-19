@@ -2,6 +2,7 @@ package models
 
 import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"time"
 )
 
 type SensorModel struct {
@@ -10,10 +11,12 @@ type SensorModel struct {
 	Type string             `json:"type" bson:"type" api:"updateble"`
 	Key  string             `json:"-" bson:"key"`
 	Area primitive.ObjectID `json:"area" bson:"area"`
+	Zone primitive.ObjectID `json:"zone" bson:"zone" api:"updateble"`
 }
 
 type SensorData struct {
 	ID       primitive.ObjectID `json:"id" bson:"_id"`
 	SensorID primitive.ObjectID `json:"sensor_id" bson:"sensor_id"`
-	Area     primitive.ObjectID `json:"area_id" bson:"area_id"`
+	Time     time.Time          `json:"time" bson:"time"`
+	Data     int                `json:"data" bson:"data"`
 }

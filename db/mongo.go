@@ -43,6 +43,15 @@ func init() {
 		Options: options.Index().SetUnique(true),
 	}
 	_, err = UsersCollection.Indexes().CreateOne(context.TODO(), model)
+
+	model = mongo.IndexModel{
+		Keys: bson.M{
+			"zone": 1,
+		},
+		Options: options.Index().SetUnique(true),
+	}
+	_, err = SensorCollection.Indexes().CreateOne(context.TODO(), model)
+
 	if err != nil {
 		log.Println(err.Error())
 	}
