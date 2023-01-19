@@ -255,9 +255,10 @@ func EditZone(c *fiber.Ctx) error {
 }
 
 type ZoneIdData struct {
-	ID   primitive.ObjectID `json:"id" bson:"_id"`
-	Data int                `json:"data" bson:"data"`
-	Time time.Time          `json:"time" bson:"time"`
+	ID       primitive.ObjectID `json:"id" bson:"_id"`
+	Data     int                `json:"data" bson:"data"`
+	Capacity int                `json:"capacity" bson:"capacity"`
+	Time     time.Time          `json:"time" bson:"time"`
 }
 
 type GetSensorDataResponse struct {
@@ -303,7 +304,7 @@ func GetSensorData(c *fiber.Ctx) error {
 				found = true
 			}
 			if found {
-				data = append(data, ZoneIdData{ID: zone.ID, Data: sensorData.Data, Time: sensorData.Time})
+				data = append(data, ZoneIdData{ID: zone.ID, Data: sensorData.Data, Time: sensorData.Time, Capacity: zone.Capacity})
 			}
 
 		}
