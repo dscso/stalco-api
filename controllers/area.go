@@ -286,21 +286,25 @@ func GetSensorData(c *fiber.Ctx) error {
 			var sensorData models.SensorData
 			dayString := c.Query("day")
 			//convert daystring to time
-			filter = bson.D{{"_id", sensor.ID}}
+			filter = bson.D{{"sensor_id", sensor.ID}}
 			day, err := time.Parse("02.01.2006", dayString)
 			if err == nil {
-				println(day.String())
+				filter = append(filter, bson.E{Key: "time", Value: bson.D{{"$gte", day}}})
 			}
 			opt := options.Find().SetSort(bson.D{{"date", -1}}).SetLimit(1)
 			courser, err := db.SensorDataCollection.Find(c.Context(), filter, opt)
-
+			found := false
 			for courser.Next(c.Context()) {
+				println(courser)
 				err := courser.Decode(&sensorData)
 				if err != nil {
 					return db.ErrorHandler(err)
 				}
+				found = true
 			}
-			data = append(data, ZoneIdData{ID: zone.ID, Data: sensorData.Data, Time: sensorData.Time})
+			if found {
+				data = append(data, ZoneIdData{ID: zone.ID, Data: sensorData.Data, Time: sensorData.Time})
+			}
 
 		}
 	}
