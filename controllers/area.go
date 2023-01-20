@@ -266,6 +266,11 @@ type GetSensorDataResponse struct {
 	Data   []ZoneIdData `json:"data"`
 }
 
+// GetSensorData gets the sensor data from a zone
+// @Router /api/area/{area_id}/latest [get]
+// @Param area_id path string true "Area ID"
+// @Description Get the sensor data from a zone
+// @Response 200 {object} GetSensorDataResponse
 func GetSensorData(c *fiber.Ctx) error {
 	areaInDB, err := db.GetArea(c)
 	if err != nil {
@@ -282,7 +287,6 @@ func GetSensorData(c *fiber.Ctx) error {
 			if err != nil {
 				continue
 			}
-			print("asdasd")
 			// get the last sensor data
 			var sensorData models.SensorData
 			//convert daystring to time
@@ -296,7 +300,6 @@ func GetSensorData(c *fiber.Ctx) error {
 			courser, err := db.SensorDataCollection.Find(c.Context(), filter, opt)
 			found := false
 			for courser.Next(c.Context()) {
-				println(courser)
 				err := courser.Decode(&sensorData)
 				if err != nil {
 					return db.ErrorHandler(err)

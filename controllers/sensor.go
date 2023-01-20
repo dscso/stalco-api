@@ -123,6 +123,17 @@ type sensorData struct {
 	Time time.Time `json:"time"`
 }
 
+type CreateSensorDataResponse struct {
+	Status string            `json:"status"`
+	Data   models.SensorData `json:"data"`
+}
+
+// CreateSensorData Creates a sensor data
+// @Router /area/:sensor_id/measure [post]
+// @Param Sensor body sensorData true "Sensor"
+// @Description create new sensor data
+// @Response 200 {object} CreateSensorDataResponse
+// @Security ApiKeyAuth
 func CreateMeasure(c *fiber.Ctx) error {
 	// get sensorid from context
 	idString := c.AllParams()["sensor_id"]
@@ -148,16 +159,16 @@ func CreateMeasure(c *fiber.Ctx) error {
 		return &fiber.Error{Message: "Invalid Key", Code: fiber.StatusBadRequest}
 	}
 	// create sensor data
-	sensorData := models.SensorData{
+	dataInDB := models.SensorData{
 		ID:       primitive.NewObjectID(),
 		SensorID: sensor.ID,
 		Data:     data.Data,
 		Time:     data.Time,
 	}
 	// insert sensor data in database
-	_, err = db.SensorDataCollection.InsertOne(c.Context(), sensorData)
+	_, err = db.SensorDataCollection.InsertOne(c.Context(), dataInDB)
 	if err != nil {
 		return db.ErrorHandler(err)
 	}
-	return c.JSON(fiber.Map{"status": "success", "data": sensorData})
+	return c.JSON(CreateSensorDataResponse{Status: "success", Data: dataInDB})
 }
